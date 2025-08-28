@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản Đồ Trực Tuyến 0.4 (Dark Mode Update)</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet-Control-Geocoder CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    
+    <!-- Material Design 3 - Fonts (Roboto Flex) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@700;wdth@1000&display=swap">
+    <!-- Material Design 3 - Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+
+    <style>
+        /* Material Design 3 - Custom CSS Variables & Base Styles */
+        :root {
+            /* Colors based on Google's Blue for primary, adjusted for MD3 light theme */
+            --md-sys-color-primary: #1A73E8; /* Google Blue */
+            --md-sys-color-on-primary: #FFFFFF;
+            --md-sys-color-primary-container: #D0E4FF;
+            --md-sys-color-on-primary-container: #001A4E;
+            
+            /* Secondary, Tertiary, Error, etc. can be derived or set similarly */
+            --md-sys-color-secondary: #5C5E64;
+            --md-sys-color-on-secondary: #FFFFFF;
+            --md-sys-color-secondary-container: #E2E2E6;
+            --md-sys-color-on-secondary-container: #1A1C1E;
+            --md-sys-color-tertiary: #7D5260;
+            --md-sys-color-on-tertiary: #FFFFFF;
+            --md-sys-color-tertiary-container: #FFD8E4;
+            --md-sys-color-on-tertiary-container: #31111D;
+            --md-sys-color-error: #BA1A1A;
+            --md-sys-color-on-error: #FFFFFF;
+            --md-sys-color-error-container: #FFDAD6;
+            --md-sys-color-on-error-container: #410002;
+            --md-sys-color-background: #FFFBFE;
+            --md-sys-color-on-background: #1C1B1F;
+            --md-sys-color-surface: #FFFBFE;
+            --md-sys-color-on-surface: #1C1B1F;
+            --md-sys-color-surface-variant: #E7E0EC;
+            --md-sys-color-on-surface-variant: #49454F;
+            --md-sys-color-outline: #79747E;
+            --md-sys-color-shadow: #000000;
+            --md-sys-color-inverse-surface: #313033;
+            --md-sys-color-inverse-on-surface: #F4EFF4;
+            --md-sys-color-inverse-primary: #D0BCFF;
+            
+            /* Typography Scale - Roboto Flex */
+            --md-sys-typescale-headline-large-font: 'Roboto Flex', sans-serif;
+            --md-sys-typescale-headline-large-size: 2.25rem; /* 36px */
+            --md-sys-typescale-title-medium-font: 'Roboto Flex', sans-serif;
+            --md-sys-typescale-title-medium-size: 1rem; /* 16px */
+            --md-sys-typescale-body-medium-font: 'Roboto Flex', sans-serif;
+            --md-sys-typescale-body-medium-size: 0.875rem; /* 14px */
+            --md-sys-font-weight-bold: 700; /* For bold text */
+            --md-sys-font-width-extended: 1000; /* For Roboto Flex width */
+
+            /* Shape and Spacing */
+            --md-sys-shape-corner-small: 8px;
+            --md-sys-shape-corner-medium: 12px;
+            --md-sys-spacing-medium: 16px;
+        }
+
+        /* Dark Mode variables */
+        body.dark-mode {
+            --md-sys-color-primary: #A8C7FA;
+            --md-sys-color-on-primary: #00306A;
+            --md-sys-color-primary-container: #00478E;
+            --md-sys-color-on-primary-container: #D0E4FF;
+            --md-sys-color-background: #1C1B1F;
+            --md-sys-color-on-background: #E6E1E5;
+            --md-sys-color-surface: #1C1B1F;
+            --md-sys-color-on-surface: #E6E1E5;
+            --md-sys-color-surface-variant: #49454F;
+            --md-sys-color-on-surface-variant: #CAC4D0;
+            --md-sys-color-outline: #938F99;
+            --md-sys-color-inverse-surface: #E6E1E5;
+            --md-sys-color-inverse-on-surface: #313033;
+            --md-sys-color-inverse-primary: #1A73E8;
+        }
+
+        body {
+            margin: 0;
+            font-family: var(--md-sys-typescale-body-medium-font);
+            font-variation-settings: 'wdth' var(--md-sys-font-width-extended);
+            font-weight: var(--md-sys-font-weight-bold);
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-background);
+            transition: background-color 0.3s, color 0.3s;
+        }
+        header {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            padding: var(--md-sys-spacing-medium) 25px;
+            text-align: center;
+            font-size: var(--md-sys-typescale-headline-large-size);
+            font-weight: var(--md-sys-font-weight-bold);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border-radius: 0 0 var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium);
+        }
+        main {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: var(--md-sys-spacing-medium);
+        }
+        #map {
+            width: 100%;
+            max-width: 1200px;
+            height: 80vh;
+            border-radius: var(--md-sys-shape-corner-medium);
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        footer {
+            background-color: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            text-align: center;
+            padding: 10px;
+            font-size: var(--md-sys-typescale-body-medium-size);
+            font-weight: var(--md-sys-font-weight-bold);
+            border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium) 0 0;
+        }
+        /* Leaflet Controls */
+        .leaflet-control {
+            border-radius: var(--md-sys-shape-corner-small) !important;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .leaflet-control-layers-toggle,
+        .leaflet-control-geocoder-icon {
+            /* Tùy chỉnh màu sắc và kích thước cho icon nếu muốn */
+        }
+        .leaflet-control-container .leaflet-bar a {
+            color: var(--md-sys-color-on-surface);
+            background-color: var(--md-sys-color-surface);
+            border-color: var(--md-sys-color-outline);
+        }
+        .leaflet-control-container .leaflet-bar a:hover {
+            background-color: var(--md-sys-color-surface-variant);
+        }
+        /* Leaflet-Control-Geocoder */
+        .leaflet-control-geocoder {
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            border-radius: var(--md-sys-shape-corner-medium);
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+        }
+        .leaflet-control-geocoder input {
+            font-family: var(--md-sys-typescale-body-medium-font);
+            font-weight: var(--md-sys-font-weight-bold);
+            color: var(--md-sys-color-on-surface);
+            border-radius: var(--md-sys-shape-corner-medium);
+            padding: 8px 12px;
+            border: 1px solid var(--md-sys-color-outline);
+            outline: none;
+            background-color: var(--md-sys-color-surface);
+        }
+        .leaflet-control-geocoder input:focus {
+            border-color: var(--md-sys-color-primary);
+        }
+        .leaflet-control-geocoder-form {
+            border-radius: var(--md-sys-shape-corner-medium);
+            overflow: hidden;
+        }
+        .leaflet-control-geocoder .geocoder-control-geocoded-location {
+            color: var(--md-sys-color-on-surface);
+        }
+
+        /* Settings Button */
+        .leaflet-control-settings-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            font-size: 24px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--md-sys-color-on-surface);
+            background-color: var(--md-sys-color-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline);
+        }
+        .leaflet-control-settings-button:hover {
+             background-color: var(--md-sys-color-surface-variant);
+        }
+
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: var(--md-sys-color-surface);
+            color: var(--md-sys-color-on-surface);
+            margin: auto;
+            padding: var(--md-sys-spacing-medium) calc(var(--md-sys-spacing-medium) * 1.5);
+            border-radius: var(--md-sys-shape-corner-medium);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .close-button {
+            color: var(--md-sys-color-outline);
+            font-size: 28px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: var(--md-sys-color-on-surface);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Setting item for Dark Mode Menu */
+        .setting-item {
+            margin-bottom: var(--md-sys-spacing-medium);
+            display: flex;
+            flex-direction: column; /* Stack label and options */
+            align-items: flex-start; /* Align text to left */
+            gap: 10px; /* Spacing between label and options */
+        }
+        .setting-item > label { /* Target the main label of the setting item */
+            font-size: var(--md-sys-typescale-title-medium-size);
+            font-weight: var(--md-sys-font-weight-bold);
+            margin-bottom: 5px; /* Space between title and radio group */
+        }
+
+        /* Dark Mode Options Container */
+        .dark-mode-options {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            width: 100%;
+            gap: 8px; /* Spacing between option buttons */
+        }
+
+        /* Style for each Dark Mode Option Button */
+        .dark-mode-option-button {
+            background-color: var(--md-sys-color-surface-variant);
+            color: var(--md-sys-color-on-surface-variant);
+            padding: 10px 15px;
+            border-radius: var(--md-sys-shape-corner-small);
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
+            text-align: left;
+            font-size: var(--md-sys-typescale-body-medium-size);
+            font-weight: var(--md-sys-font-weight-bold);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .dark-mode-option-button:hover {
+            background-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .dark-mode-option-button.selected {
+            background-color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .dark-mode-option-button.selected .material-icons {
+            color: var(--md-sys-color-on-primary); /* Ensure icon color matches selected state */
+        }
+
+        /* Icon inside option button */
+        .dark-mode-option-button .material-icons {
+            font-size: 20px;
+            vertical-align: middle;
+            margin-right: 8px;
+            color: var(--md-sys-color-on-surface-variant); /* Default icon color */
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        🌍 Bản Đồ Trực Tuyến
+    </header>
+
+    <main>
+        <div id="map"></div>
+    </main>
+
+    <footer>
+        © 2025 Bản đồ minh họa | Nguồn dữ liệu: Esri World Imagery & OpenStreetMap
+    </footer>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalButton">&times;</span>
+            <h2>Cài đặt</h2>
+            <div class="setting-item">
+                <label>Chế độ hiển thị</label>
+                <div class="dark-mode-options">
+                    <div class="dark-mode-option-button" data-mode="light" id="optionLight">
+                        <i class="material-icons">light_mode</i> Bật chế độ sáng
+                    </div>
+                    <div class="dark-mode-option-button" data-mode="dark" id="optionDark">
+                        <i class="material-icons">dark_mode</i> Bật chế độ tối
+                    </div>
+                    <div class="dark-mode-option-button" data-mode="system" id="optionSystem">
+                        <i class="material-icons">auto_mode</i> Theo hệ thống
+                    </div>
+                </div>
+            </div>
+            <!-- More settings can be added here -->
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet-Control-Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script>
+        // Khởi tạo bản đồ với Hà Nội làm vị trí mặc định
+        var map = L.map('map').setView([21.0285, 105.8542], 13);
+
+        // ĐỊNH NGHĨA CÁC LỚP NỀN (BASE LAYERS)
+        var esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+        });
+
+        var osmStandardLight = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        });
+
+        var osmStandardDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        });
+
+        var currentOsmLayer = osmStandardLight; // Biến để lưu trữ lớp OSM hiện tại
+
+        // THÊM LỚP VỆ TINH LÀM MẶC ĐỊNH KHI TẢI TRANG
+        esriSat.addTo(map);
+
+        // Thêm marker Hà Nội mặc định
+        var marker = L.marker([21.0285, 105.8542]).addTo(map);
+        marker.bindPopup("<b>Hà Nội</b><br>Thủ đô Việt Nam").openPopup();
+
+        // Tính năng tìm kiếm vị trí (Geocoding)
+        L.Control.geocoder({
+            defaultMarkGeocodedLocation: true,
+            placeholder: "Tìm kiếm địa điểm hoặc tọa độ (ví dụ: 21.02, 105.85)",
+            collapsed: true,
+            errorMessage: "Không tìm thấy kết quả. Thử lại với tên đầy đủ hoặc định dạng tọa độ chính xác (latitude, longitude).",
+            geocoder: L.Control.Geocoder.nominatim({
+                serviceUrl: 'https://nominatim.openstreetmap.org/search',
+                geocodingQueryParams: { 'accept-language': 'vi' }
+            })
+        }).addTo(map);
+
+        // KIỂM SOÁT LỚP (LAYERS CONTROL) ĐỂ CHUYỂN ĐỔI GIỮA CÁC CHẾ ĐỘ NỀN
+        var layerControl = L.control.layers({
+            "Chế độ Vệ tinh": esriSat,
+            "Chế độ Standard (Đường phố)": osmStandardLight // Mặc định là light
+        }).addTo(map);
+
+        // Hàm cập nhật Layers Control
+        function updateLayerControl() {
+            if (layerControl) {
+                map.removeControl(layerControl);
+            }
+            layerControl = L.control.layers({
+                "Chế độ Vệ tinh": esriSat,
+                "Chế độ Standard (Đường phố)": currentOsmLayer // Sử dụng lớp OSM hiện tại
+            }).addTo(map);
+        }
+        updateLayerControl();
+
+        // THAY ĐỔI: TẠO LEAFLET CONTROL TÙY CHỈNH CHO NÚT CÀI ĐẶT
+        var SettingsControl = L.Control.extend({
+            onAdd: function(map) {
+                var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                var button = L.DomUtil.create('a', 'leaflet-control-settings-button', container);
+                button.innerHTML = '<i class="material-icons">settings</i>';
+                button.href = '#';
+
+                L.DomEvent.disableClickPropagation(button);
+                L.DomEvent.on(button, 'click', function(e) {
+                    L.DomEvent.stop(e);
+                    settingsModal.style.display = 'flex';
+                });
+
+                return container;
+            },
+            onRemove: function(map) {
+                // Nothing to do here
+            }
+        });
+        new SettingsControl({ position: 'topright' }).addTo(map);
+
+        // Sự kiện click để thêm marker mới
+        map.on('click', function(e) {
+            var latlng = e.latlng;
+            L.marker([latlng.lat, latlng.lng]).addTo(map)
+                .bindPopup("Vị trí mới:<br>" + latlng.lat.toFixed(5) + ", " + latlng.lng.toFixed(5))
+                .openPopup();
+        });
+
+
+        // ---------------------------------------------------------------------
+        // JAVASCRIPT CHO SETTINGS MODAL VÀ DARK MODE MENU
+        // ---------------------------------------------------------------------
+
+        var settingsModal = document.getElementById('settingsModal');
+        var closeModalButton = document.getElementById('closeModalButton');
+        var optionLight = document.getElementById('optionLight');
+        var optionDark = document.getElementById('optionDark');
+        var optionSystem = document.getElementById('optionSystem');
+        var body = document.body;
+
+        // Listener cho chế độ tối của hệ thống
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+
+        // Hàm để áp dụng chế độ tối
+        function applyDarkMode(mode) {
+            // Remove all specific mode classes first
+            body.classList.remove('dark-mode');
+            if (map.hasLayer(osmStandardLight)) {
+                map.removeLayer(osmStandardLight);
+            }
+            if (map.hasLayer(osmStandardDark)) {
+                map.removeLayer(osmStandardDark);
+            }
+
+            let newOsmLayer;
+            if (mode === 'dark' || (mode === 'system' && prefersDarkScheme.matches)) {
+                body.classList.add('dark-mode');
+                newOsmLayer = osmStandardDark;
+            } else {
+                newOsmLayer = osmStandardLight;
+            }
+
+            // Add the correct OSM layer if it was the currently selected base layer
+            // OR if it's the only one active and not esriSat
+            if (map.hasLayer(currentOsmLayer) || !map.hasLayer(esriSat)) { // If currentOsmLayer was active, or if no base layer is active (except esriSat)
+                 newOsmLayer.addTo(map);
+            }
+            currentOsmLayer = newOsmLayer; // Update reference for layer control
+            updateLayerControl(); // Update layer control names
+
+            // Save preference to localStorage
+            localStorage.setItem('darkModePreference', mode);
+
+            // Update selected state in modal UI
+            document.querySelectorAll('.dark-mode-option-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.getElementById('option' + mode.charAt(0).toUpperCase() + mode.slice(1)).classList.add('selected');
+        }
+
+        // Khởi tạo trạng thái Dark Mode từ localStorage khi tải trang
+        const savedMode = localStorage.getItem('darkModePreference');
+        if (savedMode) {
+            applyDarkMode(savedMode);
+        } else {
+            // Mặc định là theo hệ thống nếu chưa có cài đặt nào
+            applyDarkMode('system');
+        }
+
+        // Listener cho thay đổi chế độ tối của hệ thống (nếu đang ở chế độ 'system')
+        prefersDarkScheme.addEventListener('change', (e) => {
+            if (localStorage.getItem('darkModePreference') === 'system') {
+                applyDarkMode('system');
+            }
+        });
+
+        // Event listeners cho các nút tùy chọn trong modal
+        optionLight.onclick = () => applyDarkMode('light');
+        optionDark.onclick = () => applyDarkMode('dark');
+        optionSystem.onclick = () => applyDarkMode('system');
+
+        // Mở modal
+        // Nút cài đặt được tạo trong Leaflet control, không cần biến độc lập ở đây.
+
+        // Đóng modal bằng nút X
+        closeModalButton.onclick = function() {
+            settingsModal.style.display = 'none';
+        }
+
+        // Đóng modal khi click ra ngoài (ngoài modal-content)
+        window.onclick = function(event) {
+            if (event.target == settingsModal) {
+                settingsModal.style.display = 'none';
+            }
+        }
+    </script>
+
+</body>
+</html>
